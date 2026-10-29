@@ -4,6 +4,7 @@ from models.Login_models import LoginForm
 from pymongo.errors import DuplicateKeyError
 from fastapi import HTTPException
 from database import users
+import bcrypt
 
 auth_router = APIRouter()
 
@@ -15,11 +16,17 @@ def signup(signup_data: SignUpForm):
     # check if a duplicated user exists
     # if non existent then return a success message
 
+    # 2. hashing
+    # convert pass to bytes, then hash it using bcrypt
+    password_bytes = signup_data.password.encode("utf-8")
+    salt = bcrypt.gensalt()
+    hashed_password = bcrypt.hashpw(password_bytes, salt).decode("utf-8")
+
     try:
         users.insert_one({
             "email": signup_data.email,
             "username": signup_data.username,
-            "password": signup_data.password,
+            "password": hashed_password,
             "tier": signup_data.tier,
         })
     except DuplicateKeyError:
@@ -28,14 +35,7 @@ def signup(signup_data: SignUpForm):
             detail="account already exists",
         )
 
-
-    # 2. hash password
-
-    # 3. save to database
-
-    # 4. return a response message
-
-    return {"status": "success"}
+    return {"account": "created"}
 
 
 
