@@ -41,6 +41,32 @@ def signup(signup_data: SignUpForm):
 
 @auth_router.post("/login")
 def login(login_data: LoginForm):
-    return {
-        
-    }
+
+    # finds user based on existing username
+    user = users.find_one({
+        "username": login_data.username
+    })
+
+
+    if user is None:
+        raise HTTPException(
+            status_code=401,
+            detail="account not found, try again",
+        )
+
+    # convert pass into bytes
+    pass_bytes = login_data.password.encode("utf-8")
+
+    # convert hashed pass from database into bytes
+    stored_pass_bytes = user["password"].encode("utf-8")
+
+    # compare if they match using bcrypt.checkpw()
+    if not bcrypt.checkpw(pass_bytes, stored_pass_bytes):
+        raise HTTPException(
+            status_code=401,
+            detail="invalid password, try again"
+        )
+
+    return {"logged": "in",
+            "tier": user["tier"]
+            }
